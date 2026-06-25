@@ -10,6 +10,8 @@ but you may want to supply the unmp3 version to people who have a need for highe
 The thought into loss and its potential dirtying of AI audio usages raised the thought that perhaps the loss even though mostly noise
 to humans might actually serve useful additional functions in an age of AI generative audio and stem splitting.
 
+What is interesting about this and I still need to test, that the .unmp3 file is still an audio file and you can play it, even by changing it from .unmp3 to .mp3  however I'm not entirely sure if my methods make sense just yet more testing is needed.  Again I feel like this will be useful for audio processing purposes as mp3 files are fine for audio broadcast or listening at reduced datasizes to .wav however a file that will allow files to be reverted to wav or "worked with" analytically via AI tooks like generative AI or stem seperation to have a data sense of what information needs to be accounted for in a source file that isn't present, seems to actually have a usuage. I think there may be more to it. I havn't actually encountered this before, it was just an idea that popped into my head today so I thought I would run with the idea.
+
 
 
 Added GUI version which allows the script to be run to launch of GUI to load files through select and click functions making it easier to use.
