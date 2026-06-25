@@ -10,7 +10,7 @@ The goal is to allow a lossy MP3 and a corresponding UNMP3 file to be recombined
 
 In practice, reconstruction should be bit-perfect (or within 1–2 LSB of 16-bit) for the tested workflows, as shown in the verify function and experiment summary.
 
-Total size (MP3 + UNMP3) is usually larger than a good FLAC but smaller than raw WAV, with streaming benefits from the MP3 part.
+Total size (MP3 + UNMP3) is usually larger than a good FLAC but smaller than raw WAV, with streaming benefits from the MP3 part. Recall the idea is to provide a way of distributing content via MP3 but upgrading it back to a .wav file with improved audio quality. 
 
 Reconstruction quality depends on matching sample rates, channel counts, and avoiding clipping (the code handles clipping).
 ---
