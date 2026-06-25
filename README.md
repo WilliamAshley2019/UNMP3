@@ -36,3 +36,24 @@ ffmpeg -encoders | findstr mp3lame   # Windows
 ffmpeg -encoders | grep mp3lame      # macOS/Linux
 ffmpeg -encoders | grep flac
 You should see libmp3lame and flac in the output.
+
+
+---------
+How to use
+TEST
+python unmp3.py test
+This generates a 10-second test tone and runs the full encode/decode/verify cycle at 4 bitrates (128k, 192k, 256k, 320k). You'll see a size comparison table at the end.
+
+CREATE THE SPLIT Mp3 / UNMp3
+python unmp3.py encode song.wav song.mp3 song.unmp3 --bitrate 320k
+
+Reconstruct the RAW / Decode Back to WAV
+
+python unmp3.py decode song.mp3 song.unmp3 song_restored.wav
+
+Verify 
+from unmp3 import UnMP3Codec
+codec = UnMP3Codec()
+codec.verify("song.wav", "song_restored.wav")
+If BIT-PERFECT	Your .unmp3 successfully reconstructed the original
+universally playable MP3 file for free.
