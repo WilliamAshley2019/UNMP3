@@ -1,6 +1,8 @@
 # UNMP3
 
-**Experimental MP3 Residual Preservation Format**
+I had a thought to make a "partner file" for mp3 files that can undo the destructive loss processes that strip data from the mp3 file.
+By storing the stripped data in a paired file called the "UNMP3" this allows the two files to be recombined back to their original raw wav format. The idea here was to create a way of supplying not only data for returning mp3 to a lossless form without distributing the actual .wav file but that these unmp3 files might have use in stem seperation or other analytic understanding of mp3 data they are working with. The first application of taking a .wav raw format and splitting rendering to not only the Mp3 version BUT also presering the loss in the unmp3 and creating a split stream way of transfering data in an easily restored format for instance in application where you want a version for streaming but you may want to supply the unmp3 version to people who have a need for higher quality such as broadcast. The thought into loss and its potential dirtying of AI audio usages raised the thought that perhaps the loss even though mostly noiseto humans might actually serve useful additional functions in an age of AI generative audio and stem splitting. What is interesting about this and I still need to test, that the .unmp3 file is still an audio file and you can play it, even by changing it from .unmp3 to .mp3  however I'm not entirely sure if my methods make sense just yet more testing is needed.  Again I feel like this will be useful for audio processing purposes as mp3 files are fine for audio broadcast or listening at reduced datasizes to .wav however a file that will allow files to be reverted to wav or "worked with" analytically via AI tooks like generative AI or stem seperation to have a data sense of what information needs to be accounted for in a source file that isn't present, seems to actually have a usuage. I think there may be more to it. I havn't actually encountered this before, it was just an idea that popped into my head today so I thought I would run with the idea.  
+**Experimental MP3 Residual Preservation Format** - the concept works, however I havn't tested it much yet.  I've started assembling this readme to prevent a misunderstanding of what the script aims to do or how it does it. 
 
 UNMP3 is an experimental concept that attempts to preserve the information discarded during MP3 encoding by storing it in a companion file called an **`.unmp3`** file.
 
@@ -276,7 +278,7 @@ codec.verify(
 If verification succeeds:
 
 ```text
-✓ Bit-perfect reconstruction achieved
+✓ 16-perfect reconstruction achieved
 ```
 
 ---
@@ -344,11 +346,6 @@ Potential areas of exploration:
 UNMP3 is currently an experimental research project and should not be considered a finalized archival format. The concepts explored here are intended for investigation, learning, and experimentation within digital audio processing.
 
 
-
-
-
-I had a thought to make a "partner file" for mp3 files that can undo the destructive loss processes that strip data from the mp3 file.
-By storing the stripped data in a paired file called the "UNMP3" this allows the two files to be recombined back to their original raw wav format. The idea here was to create a way of supplying not only data for returning mp3 to a lossless form without distributing the actual .wav file but that these unmp3 files might have use in stem seperation or other analytic understanding of mp3 data they are working with. The first application of taking a .wav raw format and splitting rendering to not only the Mp3 version BUT also presering the loss in the unmp3 and creating a split stream way of transfering data in an easily restored format for instance in application where you want a version for streaming but you may want to supply the unmp3 version to people who have a need for higher quality such as broadcast. The thought into loss and its potential dirtying of AI audio usages raised the thought that perhaps the loss even though mostly noiseto humans might actually serve useful additional functions in an age of AI generative audio and stem splitting. What is interesting about this and I still need to test, that the .unmp3 file is still an audio file and you can play it, even by changing it from .unmp3 to .mp3  however I'm not entirely sure if my methods make sense just yet more testing is needed.  Again I feel like this will be useful for audio processing purposes as mp3 files are fine for audio broadcast or listening at reduced datasizes to .wav however a file that will allow files to be reverted to wav or "worked with" analytically via AI tooks like generative AI or stem seperation to have a data sense of what information needs to be accounted for in a source file that isn't present, seems to actually have a usuage. I think there may be more to it. I havn't actually encountered this before, it was just an idea that popped into my head today so I thought I would run with the idea.
 
 Added GUI version which allows the script to be run to launch of GUI to load files through select and click functions making it easier to use.
 Step-by-Step Installation
