@@ -432,5 +432,4 @@ Ensure same length
 min_len = min(len(original), len(mp3_decoded))
 diff = original[:min_len] - mp3_decoded[:min_len]
 
-sf.write('residual.wav', diff, sr)
-# Listen to this — it's everything MP3 removed
+sf.write('residual.wav', diff, sr) 
