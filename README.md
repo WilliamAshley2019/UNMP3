@@ -68,3 +68,45 @@ codec = UnMP3Codec()
 codec.verify("song.wav", "song_restored.wav")
 If BIT-PERFECT	Your .unmp3 successfully reconstructed the original
 universally playable MP3 file for free.
+
+
+
+
+
+
+
+For anyone having difficulty understanding the concept this should help you understand a bit more
+
+Residual = Original WAV − (MP3 decoded back to WAV)       So when you compare the original raw and subtract the lossy version you are given the residual which is the UNMP3 my gimmick file name to describe the residual container format.
+
+
+Anything non-zero in the residual is information the MP3 encoder threw away.
+What the Residual Contains
+
+Component	What You'll Hear/See
+High-frequency loss	MP3 cuts everything above ~16–20 kHz (depending on bitrate). The residual will have "air" and shimmer above that cutoff.
+Pre-echo & smearing	Transients (snare hits, cymbals) get blurred in time. The residual captures the sharp attack that's been softened.
+Quantization noise	Psychoacoustic masking pushes noise into frequency bands where your ear is "distracted." The residual is full of this shaped noise.
+Stereo phase issues	At lower bitrates, MP3 uses joint stereo which can collapse or alter stereo imaging. The residual reveals phase anomalies.
+Practical Methods
+1. Command Line (SoX + FFmpeg)
+bash
+# Decode MP3 to WAV at same bit depth/sample rate as original
+ffmpeg -i file.mp3 -ar 44100 -ac 2 -sample_fmt s16 mp3_as_wav.wav
+
+# Invert MP3 and mix with original (requires SoX)
+sox original.wav mp3_as_wav.wav residual.wav mix -1
+2. Python (librosa / scipy)
+Python
+import numpy as np
+import soundfile as sf
+
+original, sr = sf.read('original.wav')
+mp3_decoded, _ = sf.read('decoded_mp3.wav')  # decode first
+
+# Ensure same length
+min_len = min(len(original), len(mp3_decoded))
+diff = original[:min_len] - mp3_decoded[:min_len]
+
+sf.write('residual.wav', diff, sr)
+# Listen to this — it's everything MP3 removed
