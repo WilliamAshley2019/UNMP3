@@ -1,4 +1,4 @@
-I had a thought to make a "partner file" for mp3 files that can undo the destructive lossless processes that strip data from the mp3 file.
+I had a thought to make a "partner file" for mp3 files that can undo the destructive loss processes that strip data from the mp3 file.
 By storing the stripped data in a paired file called the "UNMP3" this allows the two files to be recombined back to their original raw wav format.
 
 The idea here was to create a way of supplying not only data for returning mp3 to a lossless form without distributing the actual .wav file but that
