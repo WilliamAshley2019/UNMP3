@@ -16,20 +16,22 @@ Windows: Download from python.org (check "Add to PATH")
 macOS: brew install python3
 Linux: Usually pre-installed
 Verify:
-bash
 python --version
 Step 2: Install NumPy
-bash
+
 pip install numpy
 Step 3: Install FFmpeg (the heavy lifter)
-Table
-OS	Command
+
 Windows	Download from ffmpeg.org, add bin folder to PATH
+
 macOS	brew install ffmpeg
+
 Linux (Ubuntu/Debian)	sudo apt update && sudo apt install ffmpeg
+
 Linux (Fedora)	sudo dnf install ffmpeg
+
 Verify ffmpeg has the codecs we need:
-bash
+
 ffmpeg -encoders | findstr mp3lame   # Windows
 ffmpeg -encoders | grep mp3lame      # macOS/Linux
 ffmpeg -encoders | grep flac
