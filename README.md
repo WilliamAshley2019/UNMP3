@@ -10,6 +10,15 @@ but you may want to supply the unmp3 version to people who have a need for highe
 The thought into loss and its potential dirtying of AI audio usages raised the thought that perhaps the loss even though mostly noise
 to humans might actually serve useful additional functions in an age of AI generative audio and stem splitting.
 
+
+
+Added GUI version which allows the script to be run to launch of GUI to load files through select and click functions making it easier to use.
+
+
+
+
+
+
 Step-by-Step Installation
 Step 1: Install Python (if not already installed)
 Windows: Download from python.org (check "Add to PATH")
