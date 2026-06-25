@@ -8,6 +8,11 @@ UNMP3 is an experimental concept that attempts to preserve the information disca
 
 The goal is to allow a lossy MP3 and a corresponding UNMP3 file to be recombined to reconstruct the original WAV file, while still retaining the storage and streaming advantages of MP3.
 
+In practice, reconstruction should be bit-perfect (or within 1–2 LSB of 16-bit) for the tested workflows, as shown in the verify function and experiment summary.
+
+Total size (MP3 + UNMP3) is usually larger than a good FLAC but smaller than raw WAV, with streaming benefits from the MP3 part.
+
+Reconstruction quality depends on matching sample rates, channel counts, and avoiding clipping (the code handles clipping).
 ---
 
 ## Concept
