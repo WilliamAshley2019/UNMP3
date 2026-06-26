@@ -305,16 +305,6 @@ class EncodeTab(tk.Frame):
                            activebackground=C["panel"], activeforeground=C["accent"],
                            font=FONT_MONO_SM).pack(side="left", padx=8)
 
-        # Acoustic analysis option
-        aco_frame = tk.Frame(self, bg=C["panel"])
-        aco_frame.pack(fill="x", padx=12, pady=(2, 0))
-        self.do_acoustic = tk.BooleanVar(value=True)
-        tk.Checkbutton(aco_frame, text="Auto-analyse BPM / key / loudness into .remeta  (adds ~10–30s)",
-                       variable=self.do_acoustic,
-                       bg=C["panel"], fg=C["text"], selectcolor=C["bg"],
-                       activebackground=C["panel"], activeforeground=C["accent"],
-                       font=FONT_LABEL).pack(side="left")
-
         # Action buttons
         btn_frame = tk.Frame(self, bg=C["panel"])
         btn_frame.pack(fill="x", padx=12, pady=10)
@@ -342,12 +332,11 @@ class EncodeTab(tk.Frame):
         self.remeta_row.var.set("")
 
     def _run(self):
-        wav     = self.wav_row.path
-        mp3     = self.mp3_row.path
-        unmp3   = self.unmp3_row.path
-        remeta  = self.remeta_row.path
-        br      = self.bitrate.get()
-        acoustic = self.do_acoustic.get()
+        wav    = self.wav_row.path
+        mp3    = self.mp3_row.path
+        unmp3  = self.unmp3_row.path
+        remeta = self.remeta_row.path
+        br     = self.bitrate.get()
 
         if not wav:
             messagebox.showwarning("Missing Input", "Please select an input WAV file.")
@@ -374,8 +363,7 @@ class EncodeTab(tk.Frame):
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf):
                     result = codec.encode(wav, mp3, unmp3,
-                                             remeta_path=remeta or None,
-                                             do_acoustic=acoustic)
+                                             remeta_path=remeta or None)
                 for line in buf.getvalue().splitlines():
                     tag = "ok" if "✅" in line else ("err" if "❌" in line else None)
                     self._q.put(("log", line, tag))
@@ -816,7 +804,7 @@ class RemetaTab(tk.Frame):
 
         def worker():
             try:
-                meta = create_remeta(wav, do_acoustic=True)
+                meta = create_remeta(wav)
                 self._q.put(("remeta_load", meta, None))
                 self._q.put(("log", f"Extracted metadata from: {Path(wav).name}", "ok"))
                 self._q.put(("done", None, None))

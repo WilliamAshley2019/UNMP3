@@ -104,7 +104,7 @@ class UnMP3Codec:
             ])
         raw_path.unlink(missing_ok=True)
 
-    def encode(self, wav_path, mp3_path, unmp3_path, remeta_path=None, user_meta=None, do_acoustic=True):
+    def encode(self, wav_path, mp3_path, unmp3_path, remeta_path=None, user_meta=None):
         """Encode WAV to MP3 + UNMP3 residual."""
         wav_path = Path(wav_path)
         mp3_path = Path(mp3_path)
@@ -397,8 +397,6 @@ def main():
     parser.add_argument('--bitrate', default='320k', help='MP3 bitrate (default: 320k)')
     parser.add_argument('--output-dir', default='./unmp3_test', help='Test output directory')
     parser.add_argument('--remeta', default=None, help='Path for .remeta sidecar (encode/decode)')
-    parser.add_argument('--no-acoustic', action='store_true',
-                        help='Skip BPM/key/loudness analysis (faster)')
 
     args = parser.parse_args()
 
@@ -412,9 +410,7 @@ def main():
         if not all([args.input1, args.input2, args.output]):
             parser.error("encode requires: input.wav output.mp3 output.unmp3")
         codec = UnMP3Codec(mp3_bitrate=args.bitrate)
-        codec.encode(args.input1, args.input2, args.output,
-                     remeta_path=args.remeta,
-                     do_acoustic=not getattr(args, 'no_acoustic', False))
+        codec.encode(args.input1, args.input2, args.output, remeta_path=args.remeta)
     elif args.command == 'decode':
         if not all([args.input1, args.input2, args.output]):
             parser.error("decode requires: input.mp3 input.unmp3 output.wav")
