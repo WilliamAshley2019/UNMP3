@@ -1,3 +1,6 @@
+EDIT: To do I also want to add in a new feature called ".remeta" that will add in .wav metadata as  third file so the .mp3 + .unmp3 + .remeta will provide a fully profiled .wav file with its metadata distributed through 3 files in I am thinking the specific cases may be where accessing the individual files may be more efficient but you may still want to work with .wav files for specific purposes it offers a slightly improved format over .wav. A little weird but I think there may be uses.
+
+
 # UNMP3
 
 I had a thought to make a "partner file" for mp3 files that can undo the destructive loss processes that strip data from the mp3 file.
