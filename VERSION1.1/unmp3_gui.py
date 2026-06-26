@@ -24,17 +24,6 @@ try:
 except ImportError:
     CODEC_AVAILABLE = False
 
-try:
-    from remeta import (create_remeta, save_remeta, load_remeta,
-                        apply_remeta_to_wav, print_remeta,
-                        FIELD_GROUPS, FIELD_DESCRIPTIONS, AUTO_FIELDS)
-    REMETA_AVAILABLE = True
-except ImportError:
-    REMETA_AVAILABLE = False
-    FIELD_GROUPS = {}
-    FIELD_DESCRIPTIONS = {}
-    AUTO_FIELDS = set()
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PALETTE  (dark phosphor / DAW aesthetic)
@@ -286,10 +275,6 @@ class EncodeTab(tk.Frame):
                                  [("UNMP3 Residual", "*.unmp3")], save=True)
         self.unmp3_row.pack(fill="x", **pad)
 
-        self.remeta_row = FileRow(self, "Output REMETA",
-                                  [("REMETA Sidecar", "*.remeta")], save=True)
-        self.remeta_row.pack(fill="x", **pad)
-
         # Auto-fill outputs when WAV chosen
         self.wav_row.var.trace_add("write", self._autofill)
 
@@ -322,21 +307,17 @@ class EncodeTab(tk.Frame):
             self.mp3_row.var.set(str(stem) + ".mp3")
         if not self.unmp3_row.path:
             self.unmp3_row.var.set(str(stem) + ".unmp3")
-        if not self.remeta_row.path:
-            self.remeta_row.var.set(str(stem) + ".remeta")
 
     def _clear(self):
         self.wav_row.var.set("")
         self.mp3_row.var.set("")
         self.unmp3_row.var.set("")
-        self.remeta_row.var.set("")
 
     def _run(self):
-        wav    = self.wav_row.path
-        mp3    = self.mp3_row.path
-        unmp3  = self.unmp3_row.path
-        remeta = self.remeta_row.path
-        br     = self.bitrate.get()
+        wav   = self.wav_row.path
+        mp3   = self.mp3_row.path
+        unmp3 = self.unmp3_row.path
+        br    = self.bitrate.get()
 
         if not wav:
             messagebox.showwarning("Missing Input", "Please select an input WAV file.")
@@ -362,8 +343,7 @@ class EncodeTab(tk.Frame):
                 import io, contextlib
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf):
-                    result = codec.encode(wav, mp3, unmp3,
-                                             remeta_path=remeta or None)
+                    result = codec.encode(wav, mp3, unmp3)
                 for line in buf.getvalue().splitlines():
                     tag = "ok" if "✅" in line else ("err" if "❌" in line else None)
                     self._q.put(("log", line, tag))
@@ -418,10 +398,6 @@ class DecodeTab(tk.Frame):
                        activebackground=C["panel"], activeforeground=C["accent"],
                        font=FONT_LABEL).pack(side="left")
 
-        self.remeta_row = FileRow(self, "Input REMETA",
-                                  [("REMETA Sidecar", "*.remeta"), ("All Files", "*.*")])
-        self.remeta_row.pack(fill="x", padx=12, pady=3)
-
         self.orig_row = FileRow(self, "Original WAV (verify)",
                                 [("WAV Audio", "*.wav"), ("All Files", "*.*")])
         self.orig_row.pack(fill="x", padx=12, pady=3)
@@ -444,25 +420,19 @@ class DecodeTab(tk.Frame):
                 self.unmp3_row.var.set(candidate)
         if not self.wav_row.path:
             self.wav_row.var.set(str(stem) + "_restored.wav")
-        if not self.remeta_row.path:
-            candidate = str(stem) + ".remeta"
-            if Path(candidate).exists():
-                self.remeta_row.var.set(candidate)
 
     def _clear(self):
         self.mp3_row.var.set("")
         self.unmp3_row.var.set("")
         self.wav_row.var.set("")
-        self.remeta_row.var.set("")
         self.orig_row.var.set("")
 
     def _run(self):
-        mp3    = self.mp3_row.path
-        unmp3  = self.unmp3_row.path
-        wav    = self.wav_row.path
-        remeta = self.remeta_row.path
+        mp3   = self.mp3_row.path
+        unmp3 = self.unmp3_row.path
+        wav   = self.wav_row.path
         verify = self.do_verify.get()
-        orig   = self.orig_row.path
+        orig  = self.orig_row.path
 
         if not mp3 or not unmp3:
             messagebox.showwarning("Missing Input", "Please select both an MP3 and UNMP3 file.")
@@ -487,8 +457,7 @@ class DecodeTab(tk.Frame):
                 codec = UnMP3Codec()
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf):
-                    codec.decode(mp3, unmp3, wav,
-                                         remeta_path=remeta or None)
+                    codec.decode(mp3, unmp3, wav)
                 for line in buf.getvalue().splitlines():
                     self._q.put(("log", line, None))
 
@@ -579,299 +548,6 @@ class TestTab(tk.Frame):
         threading.Thread(target=worker, daemon=True).start()
 
 
-
-class RemetaTab(tk.Frame):
-    """
-    Metadata editor tab — load a .remeta, edit all fields, save back.
-    Also supports extracting fresh metadata from a WAV file.
-    Fields are organised into sub-tabs matching FIELD_GROUPS.
-    """
-
-    def __init__(self, parent, log, q):
-        super().__init__(parent, bg=C["panel"])
-        self._log  = log
-        self._q    = q
-        self._vars = {}   # field -> StringVar
-        self._current_path = None
-        self._build()
-
-    # ── Layout ───────────────────────────────────────────────────────────────
-
-    def _build(self):
-        pad = dict(padx=12, pady=4)
-
-        # ── File row ──
-        file_frame = tk.Frame(self, bg=C["panel"])
-        file_frame.pack(fill="x", padx=12, pady=(8, 4))
-
-        tk.Label(file_frame, text="REMETA File", width=14, anchor="w",
-                 bg=C["panel"], fg=C["muted"], font=FONT_LABEL).pack(side="left")
-
-        self._path_var = tk.StringVar()
-        tk.Entry(file_frame, textvariable=self._path_var, width=38,
-                 bg=C["entry_bg"], fg=C["entry_fg"],
-                 insertbackground=C["accent"], relief="flat",
-                 font=FONT_MONO_SM, highlightthickness=1,
-                 highlightcolor=C["accent2"],
-                 highlightbackground=C["border"]).pack(side="left", padx=(0, 6))
-
-        PhosphorButton(file_frame, "Open…",   command=self._open_remeta,
-                       width=80).pack(side="left", padx=(0, 4))
-        PhosphorButton(file_frame, "Save",    command=self._save_remeta,
-                       width=70, accent=True).pack(side="left", padx=(0, 4))
-        PhosphorButton(file_frame, "Save As…",command=self._saveas_remeta,
-                       width=90).pack(side="left")
-
-        # ── Extract from WAV row ──
-        wav_frame = tk.Frame(self, bg=C["panel"])
-        wav_frame.pack(fill="x", padx=12, pady=(0, 6))
-
-        tk.Label(wav_frame, text="Extract from WAV", width=14, anchor="w",
-                 bg=C["panel"], fg=C["muted"], font=FONT_LABEL).pack(side="left")
-
-        self._wav_var = tk.StringVar()
-        tk.Entry(wav_frame, textvariable=self._wav_var, width=38,
-                 bg=C["entry_bg"], fg=C["entry_fg"],
-                 insertbackground=C["accent"], relief="flat",
-                 font=FONT_MONO_SM, highlightthickness=1,
-                 highlightcolor=C["accent2"],
-                 highlightbackground=C["border"]).pack(side="left", padx=(0, 6))
-
-        PhosphorButton(wav_frame, "Browse…",  command=self._browse_wav,
-                       width=80).pack(side="left", padx=(0, 4))
-        PhosphorButton(wav_frame, "Extract",  command=self._extract_wav,
-                       width=80, accent=True).pack(side="left", padx=(0, 4))
-
-        tk.Frame(self, bg=C["border"], height=1).pack(fill="x", padx=0)
-
-        # ── Sub-tabs for field groups ──
-        if not REMETA_AVAILABLE:
-            tk.Label(self, text="remeta.py not found — place it alongside unmp3.py",
-                     bg=C["panel"], fg=C["warn"], font=FONT_MONO_SM).pack(pady=20)
-            return
-
-        style = ttk.Style()
-        style.configure("Sub.TNotebook",
-                        background=C["panel"], borderwidth=0, tabmargins=0)
-        style.configure("Sub.TNotebook.Tab",
-                        background=C["bg"], foreground=C["muted"],
-                        padding=[10, 4], font=FONT_MONO_SM,
-                        borderwidth=0, focuscolor=C["panel"])
-        style.map("Sub.TNotebook.Tab",
-                  background=[("selected", C["panel"])],
-                  foreground=[("selected", C["accent"])],
-                  expand=[("selected", [0, 0, 0, 0])])
-
-        sub_nb = ttk.Notebook(self, style="Sub.TNotebook")
-        sub_nb.pack(fill="both", expand=True, padx=0, pady=0)
-
-        for group_name, fields in FIELD_GROUPS.items():
-            frame = tk.Frame(sub_nb, bg=C["panel"])
-            sub_nb.add(frame, text=f"  {group_name}  ")
-            self._build_group(frame, fields)
-
-        # ── Bottom action bar ──
-        bar = tk.Frame(self, bg=C["panel"])
-        bar.pack(fill="x", padx=12, pady=6)
-        PhosphorButton(bar, "Clear All",  command=self._clear_all,
-                       width=100).pack(side="left", padx=(0, 8))
-        PhosphorButton(bar, "Apply to WAV…", command=self._apply_to_wav,
-                       width=130, accent=True).pack(side="left")
-
-    def _build_group(self, parent, fields):
-        """Build a scrollable grid of label + entry for each field."""
-        canvas = tk.Canvas(parent, bg=C["panel"], highlightthickness=0)
-        sb = tk.Scrollbar(parent, orient="vertical", command=canvas.yview,
-                          bg=C["panel"], troughcolor=C["bg"],
-                          activebackground=C["accent2"])
-        canvas.configure(yscrollcommand=sb.set)
-        sb.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
-
-        inner = tk.Frame(canvas, bg=C["panel"])
-        win = canvas.create_window((0, 0), window=inner, anchor="nw")
-
-        def _on_resize(e):
-            canvas.itemconfig(win, width=e.width)
-        canvas.bind("<Configure>", _on_resize)
-
-        def _on_frame_configure(_):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-        inner.bind("<Configure>", _on_frame_configure)
-
-        # Mouse wheel scroll
-        def _scroll(e):
-            canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
-        canvas.bind_all("<MouseWheel>", _scroll)
-
-        for row_i, field in enumerate(fields):
-            is_auto = field in AUTO_FIELDS
-            desc = FIELD_DESCRIPTIONS.get(field, field)
-            bg_row = C["panel"] if row_i % 2 == 0 else C["bg"]
-
-            row_frame = tk.Frame(inner, bg=bg_row)
-            row_frame.pack(fill="x", padx=4, pady=1)
-
-            # Field name
-            name_lbl = tk.Label(row_frame, text=field,
-                                width=28, anchor="w",
-                                bg=bg_row,
-                                fg=C["muted"] if is_auto else C["text"],
-                                font=FONT_MONO_SM)
-            name_lbl.pack(side="left", padx=(6, 4))
-
-            # Value entry
-            var = tk.StringVar()
-            self._vars[field] = var
-
-            entry_bg = C["bg"] if is_auto else C["entry_bg"]
-            entry_fg = C["muted"] if is_auto else C["entry_fg"]
-            state    = "readonly" if is_auto else "normal"
-
-            ent = tk.Entry(row_frame, textvariable=var,
-                           bg=entry_bg, fg=entry_fg,
-                           disabledbackground=C["bg"],
-                           disabledforeground=C["muted"],
-                           insertbackground=C["accent"],
-                           relief="flat", font=FONT_MONO_SM,
-                           state=state,
-                           highlightthickness=1,
-                           highlightcolor=C["accent2"],
-                           highlightbackground=C["border"])
-            ent.pack(side="left", fill="x", expand=True, padx=(0, 6))
-
-            # Tooltip-style description label
-            tk.Label(row_frame, text=desc,
-                     bg=bg_row, fg=C["muted"],
-                     font=("Segoe UI", 8),
-                     anchor="w").pack(side="left", padx=(0, 8))
-
-    # ── Actions ──────────────────────────────────────────────────────────────
-
-    def _open_remeta(self):
-        path = filedialog.askopenfilename(
-            filetypes=[("REMETA Sidecar", "*.remeta"), ("JSON", "*.json"), ("All Files", "*.*")])
-        if not path:
-            return
-        try:
-            meta = load_remeta(path)
-            self._load_meta(meta)
-            self._path_var.set(path)
-            self._current_path = path
-            self._log.append(f"Loaded: {Path(path).name}", "ok")
-        except Exception as e:
-            messagebox.showerror("Load Error", str(e))
-
-    def _save_remeta(self):
-        path = self._current_path or self._path_var.get().strip()
-        if not path:
-            self._saveas_remeta()
-            return
-        try:
-            save_remeta(self._collect_meta(), path)
-            self._log.append(f"Saved: {Path(path).name}", "ok")
-        except Exception as e:
-            messagebox.showerror("Save Error", str(e))
-
-    def _saveas_remeta(self):
-        path = filedialog.asksaveasfilename(
-            filetypes=[("REMETA Sidecar", "*.remeta")],
-            defaultextension=".remeta")
-        if not path:
-            return
-        try:
-            save_remeta(self._collect_meta(), path)
-            self._path_var.set(path)
-            self._current_path = path
-            self._log.append(f"Saved as: {Path(path).name}", "ok")
-        except Exception as e:
-            messagebox.showerror("Save Error", str(e))
-
-    def _browse_wav(self):
-        path = filedialog.askopenfilename(
-            filetypes=[("WAV Audio", "*.wav"), ("All Files", "*.*")])
-        if path:
-            self._wav_var.set(path)
-
-    def _extract_wav(self):
-        wav = self._wav_var.get().strip()
-        if not wav or not Path(wav).exists():
-            messagebox.showwarning("Missing File", "Please select a valid WAV file.")
-            return
-        if not REMETA_AVAILABLE:
-            messagebox.showerror("Unavailable", "remeta.py not found.")
-            return
-
-        def worker():
-            try:
-                meta = create_remeta(wav)
-                self._q.put(("remeta_load", meta, None))
-                self._q.put(("log", f"Extracted metadata from: {Path(wav).name}", "ok"))
-                self._q.put(("done", None, None))
-            except Exception as e:
-                self._q.put(("log", f"Extract error: {e}", "err"))
-                self._q.put(("done", None, None))
-
-        self._log.clear()
-        self._log.append(f"Extracting metadata from {Path(wav).name}…", "muted")
-        threading.Thread(target=worker, daemon=True).start()
-
-    def _apply_to_wav(self):
-        path = filedialog.askopenfilename(
-            filetypes=[("WAV Audio", "*.wav"), ("All Files", "*.*")],
-            title="Select WAV to apply metadata to")
-        if not path:
-            return
-        if not REMETA_AVAILABLE:
-            messagebox.showerror("Unavailable", "remeta.py not found.")
-            return
-
-        # Save to a temp remeta and apply
-        import tempfile
-        tmp = Path(tempfile.gettempdir()) / f"gui_apply_{os.getpid()}.remeta"
-        try:
-            save_remeta(self._collect_meta(), tmp)
-            apply_remeta_to_wav(str(tmp), path)
-            tmp.unlink(missing_ok=True)
-            self._log.append(f"Metadata applied to: {Path(path).name}", "ok")
-        except Exception as e:
-            tmp.unlink(missing_ok=True)
-            messagebox.showerror("Apply Error", str(e))
-
-    def _clear_all(self):
-        for var in self._vars.values():
-            var.set("")
-        self._path_var.set("")
-        self._current_path = None
-
-    # ── Helpers ──────────────────────────────────────────────────────────────
-
-    def _load_meta(self, meta):
-        """Populate all StringVars from a remeta dict."""
-        for field, var in self._vars.items():
-            val = meta.get(field, "")
-            var.set("" if val is None else str(val))
-
-    def _collect_meta(self):
-        """Collect all StringVars back into a remeta dict."""
-        meta = {}
-        for field, var in self._vars.items():
-            val = var.get().strip()
-            meta[field] = val if val else ""
-        return meta
-
-    def load_from_path(self, path):
-        """Called externally (e.g. from encode tab) to pre-load a .remeta."""
-        if Path(path).exists():
-            try:
-                meta = load_remeta(path)
-                self._load_meta(meta)
-                self._path_var.set(path)
-                self._current_path = path
-            except Exception:
-                pass
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN WINDOW
 # ══════════════════════════════════════════════════════════════════════════════
@@ -930,10 +606,9 @@ class UnMP3App(tk.Tk):
         has_codec   = CODEC_AVAILABLE
 
         issues = []
-        if not has_ffmpeg:   issues.append("ffmpeg not found in PATH")
-        if not has_numpy:    issues.append("numpy not installed  →  pip install numpy")
-        if not has_codec:    issues.append("unmp3.py not found alongside this script")
-        if not REMETA_AVAILABLE: issues.append("remeta.py not found  →  place alongside unmp3.py")
+        if not has_ffmpeg:  issues.append("ffmpeg not found in PATH")
+        if not has_numpy:   issues.append("numpy not installed  →  pip install numpy")
+        if not has_codec:   issues.append("unmp3.py not found alongside this script")
 
         if issues:
             banner = tk.Frame(self, bg="#2a1010", pady=4)
@@ -963,15 +638,13 @@ class UnMP3App(tk.Tk):
 
         self._log = LogPane(self)  # shared log, built before tabs pass it
 
-        self.enc_tab    = EncodeTab(nb, self._log, self._q)
-        self.dec_tab    = DecodeTab(nb, self._log, self._q)
-        self.test_tab   = TestTab(nb,  self._log, self._q)
-        self.remeta_tab = RemetaTab(nb, self._log, self._q)
+        self.enc_tab  = EncodeTab(nb, self._log, self._q)
+        self.dec_tab  = DecodeTab(nb, self._log, self._q)
+        self.test_tab = TestTab(nb,  self._log, self._q)
 
-        nb.add(self.enc_tab,    text="  Encode  ")
-        nb.add(self.dec_tab,    text="  Decode  ")
-        nb.add(self.test_tab,   text="  Test Suite  ")
-        nb.add(self.remeta_tab, text="  Metadata  ")
+        nb.add(self.enc_tab,  text="  Encode  ")
+        nb.add(self.dec_tab,  text="  Decode  ")
+        nb.add(self.test_tab, text="  Test Suite  ")
 
     # ── Console ───────────────────────────────────────────────────────────────
 
@@ -1011,9 +684,6 @@ class UnMP3App(tk.Tk):
                 if kind == "log":
                     self._log.append(msg, tag)
                     self._status_var.set(msg[:80] if msg else "Running…")
-                elif kind == "remeta_load":
-                    # msg is a meta dict from background extract
-                    self.remeta_tab._load_meta(msg)
                 elif kind == "done":
                     self._busy = False
                     self._status_var.set("Done.")
