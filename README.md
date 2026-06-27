@@ -3,6 +3,8 @@ EDIT: To do I also want to add in a new feature called ".remeta" that will add i
 I've added version 3 of UNmp3 this aims to add basic "song analysis" tools for tempo / pitch, and it expands the typee of metadata that can be input.  there are dependencies to install such as  pip install mutagen
 I am still testing both version 2 and version 3 so there may be bugs.
 
+Version 4 - will include a few more analysis tools - as I think the .remeta data will be useful for automating audio processes.
+analysis and .remeta info additions Noise floor shape , Dynamic envelope, Transient character, Harmonic distortion signature, delta compute
 
 # UNMP3
 
