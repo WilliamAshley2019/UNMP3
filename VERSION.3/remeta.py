@@ -37,13 +37,6 @@ import tempfile
 from pathlib import Path
 
 
-# Optional deep analysis import
-try:
-    from noise_profiler import run_full_analysis, compute_profile_delta
-    DEEP_ANALYSIS_AVAILABLE = True
-except ImportError:
-    DEEP_ANALYSIS_AVAILABLE = False
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Version & Schema
 # ─────────────────────────────────────────────────────────────────────────────
@@ -887,7 +880,7 @@ def _consolidate(meta):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def create_remeta(wav_path, mp3_path=None, bitrate=None, user_fields=None,
-                  do_acoustic=True, do_deep_analysis=False):
+                  do_acoustic=True):
     """
     Build a complete remeta dict from a WAV file.
     Runs: WAV chunk parsing, ID3 extraction (if mp3_path given),
@@ -932,15 +925,6 @@ def create_remeta(wav_path, mp3_path=None, bitrate=None, user_fields=None,
             if v != "" and v is not None:
                 if not meta.get(k):
                     meta[k] = v
-
-    # 3b — Deep analysis (noise floor, dynamics, transients, harmonics)
-    if do_deep_analysis and DEEP_ANALYSIS_AVAILABLE:
-        print("    [remeta] Running deep analysis (noise / dynamics / transients / harmonics)…")
-        try:
-            deep = run_full_analysis(wav_path)
-            meta["deep_analysis"] = deep
-        except Exception as e:
-            meta["deep_analysis"] = {"error": str(e)}
 
     # 4 — Encoder delay
     if mp3_path and Path(mp3_path).exists():
@@ -1085,8 +1069,6 @@ def _cli():
     p_ex.add_argument("--bitrate", default="", help="MP3 bitrate label")
     p_ex.add_argument("--no-acoustic", action="store_true",
                       help="Skip acoustic analysis (faster)")
-    p_ex.add_argument("--deep", action="store_true",
-                      help="Run deep analysis (noise profile, dynamics, transients, harmonics)")
 
     p_sh = sub.add_parser("show", help="Display .remeta contents")
     p_sh.add_argument("remeta", help=".remeta file to display")
@@ -1104,8 +1086,7 @@ def _cli():
 
     if args.cmd == "extract":
         meta = create_remeta(args.wav, mp3_path=args.mp3, bitrate=args.bitrate,
-                             do_acoustic=not args.no_acoustic,
-                             do_deep_analysis=getattr(args, 'deep', False))
+                             do_acoustic=not args.no_acoustic)
         save_remeta(meta, args.output)
         print(f"\n✅ Saved {args.output}")
         print_remeta(meta)
