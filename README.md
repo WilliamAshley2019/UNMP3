@@ -1,4 +1,7 @@
-EDIT: To do I also want to add in a new feature called ".remeta" that will add in .wav metadata as  third file so the .mp3 + .unmp3 + .remeta will provide a fully profiled .wav file with its metadata distributed through 3 files in I am thinking the specific cases may be where accessing the individual files may be more efficient but you may still want to work with .wav files for specific purposes it offers a slightly improved format over .wav. A little weird but I think there may be uses.
+EDIT  2026-06-28
+I've updated to VERSION 4 it adds more audio analysis functions - which I have added into the remeta and json file for use with some plugins I plan to allow to use remeta data to do more things with audio effects and ai usage such as for stem seperation - on more points of consideration.
+
+EDIT  2026-06-27 To do I also want to add in a new feature called ".remeta" that will add in .wav metadata as  third file so the .mp3 + .unmp3 + .remeta will provide a fully profiled .wav file with its metadata distributed through 3 files in I am thinking the specific cases may be where accessing the individual files may be more efficient but you may still want to work with .wav files for specific purposes it offers a slightly improved format over .wav. A little weird but I think there may be uses.
 
 I've added version 3 of UNmp3 this aims to add basic "song analysis" tools for tempo / pitch, and it expands the type of metadata that can be input.  there are dependencies to install such as  pip install mutagen
 I am still testing both version 2 and version 3 so there may be bugs.
